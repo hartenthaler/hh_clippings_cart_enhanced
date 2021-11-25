@@ -1,0 +1,19 @@
+# webtrees CLIPPINGS CART.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: hh 2.0.17\n"
+"Report-Msgid-Bugs-To: hermann@hartenthaler.de\n"
+"POT-Creation-Date: 2021-11-21 12:57+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ClippingsCartModuleTrait.php:21
+msgid "Replacement for the original 'Clippings Cart' module."
+msgstr ""

@@ -1,0 +1,35 @@
+<?php
+
+use Fisharebest\Webtrees\I18N;
+
+/**
+ * @var array<string,string> $options
+ * @var string               $title
+ */
+
+?>
+
+<h2 class="wt-page-title"><?= $title ?></h2>
+
+<form method="post" class="wt-page-options wt-page-options-clippings d-print-none">
+    <?= csrf_field() ?>
+
+    <div class="row form-group">
+        <div class="col-sm-3 col-form-label wt-page-options-label">
+            <?= I18N::translate('execute an action') ?>
+        </div>
+        <div class="col-sm-9 wt-page-options-value">
+            <?= view('components/radios', ['name' => 'option', 'options' => $options, 'selected' => key($options)]) ?>
+        </div>
+    </div>
+
+    <div class="row form-group">
+        <div class="col-sm-3 wt-page-options-label"></div>
+        <div class="col-sm-9 wt-page-options-value">
+            <button type="submit" class="btn btn-primary">
+                <?= view('icons/save') ?>
+                <?= /* I18N: A button label. */ I18N::translate('continue') ?>
+            </button>
+        </div>
+    </div>
+</form>
