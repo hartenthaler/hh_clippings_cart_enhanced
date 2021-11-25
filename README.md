@@ -30,7 +30,7 @@ This Readme contains the following main sections
 
 This custom module replaces the original 'Clippings Cart' module.
 The design concept for the enhanced clippings cart is shown in the following diagram:
-<p align="center"><img src="resources/docu/ClippingsCartEnhanced.png" alt="new concept for enhanced clippings cart" align="center" width="80%"></p>
+<p align="center"><img src="resources/docu/ClippingsCartEnhanced.png" alt="new concept for enhanced clippings cart" align="center" width="100%"></p>
 
 Various functions can collect records in the clippings cart and these records could then be passed on to various evaluation / export / visualization functions.
 The user of the module can decide which records should be sent to the clippings cart
@@ -58,14 +58,15 @@ Such a function could be for example [TAM](https://github.com/rpreiner/tam) (Top
 Screenshot using TAM for a tree with more than 10.000 persons
 <p align="center"><img src="resources/docu/Screenshot_Tree.png" alt="Screenshot of tab" align="center" width="80%"></p>
 
-Screenshot using TAM to show a H diagram (compare to webtrees chart "compact tree")
+Screenshot using TAM for a visualisation of all ancestor circles in this tree
+(removing all leaves in this tree recursively)
+<p align="center"><img src="resources/docu/Screenshot_Circles.png" alt="Screenshot of tab" align="center" width="80%"></p>
+
+Screenshot using TAM to show a H diagram (comparable to webtrees chart "compact tree")
 <p align="center"><img src="resources/docu/Screenshot_H_diagram.png" alt="Screenshot of tab" align="center" width="80%"></p>
 
 Screenshot using TAM for a partner chain with 30 partners of partners of partners 
 <p align="center"><img src="resources/docu/Screenshot_PartnerChains.png" alt="Screenshot of tab" align="center" width="80%"></p>
-
-Screenshot using TAM for a visualisation of ancestor circles
-<p align="center"><img src="resources/docu/Screenshot_Circles.png" alt="Screenshot of tab" align="center" width="80%"></p>
 
 <a name="requirements"></a>
 ## Requirements
