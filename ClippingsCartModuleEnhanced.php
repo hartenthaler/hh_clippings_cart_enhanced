@@ -1,4 +1,4 @@
-<?php /** @noinspection ALL */
+<?php
 /*
  * webtrees - clippings cart enhanced
  *
@@ -50,19 +50,19 @@ declare(strict_types=1);
 
 namespace Hartenthaler\Webtrees\Module\ClippingsCart;
 
+use Fisharebest\Webtrees\I18N;
 use Aura\Router\Route;
 use Fisharebest\Webtrees\Auth;
 use Fisharebest\Webtrees\Gedcom;
 use Fisharebest\Webtrees\GedcomRecord;
-use Fisharebest\Webtrees\Http\RequestHandlers\FamilyPage;
 use Fisharebest\Webtrees\Http\RequestHandlers\IndividualPage;
-use Fisharebest\Webtrees\Http\RequestHandlers\LocationPage;
+use Fisharebest\Webtrees\Http\RequestHandlers\FamilyPage;
 use Fisharebest\Webtrees\Http\RequestHandlers\MediaPage;
+use Fisharebest\Webtrees\Http\RequestHandlers\LocationPage;
 use Fisharebest\Webtrees\Http\RequestHandlers\NotePage;
 use Fisharebest\Webtrees\Http\RequestHandlers\RepositoryPage;
 use Fisharebest\Webtrees\Http\RequestHandlers\SourcePage;
 use Fisharebest\Webtrees\Http\RequestHandlers\SubmitterPage;
-use Fisharebest\Webtrees\I18N;
 use Fisharebest\Webtrees\Individual;
 use Fisharebest\Webtrees\Family;
 use Fisharebest\Webtrees\Media;
@@ -97,14 +97,14 @@ use RuntimeException;
 
 use function redirect;
 
+require_once(__DIR__ . '/src/AncestorCircles.php');
+
 class ClippingsCartModuleEnhanced extends ClippingsCartModule
                                   implements ModuleCustomInterface, ModuleMenuInterface
 {
     use ModuleCustomTrait;
 
-    /**
-     * list of const for module administration
-     */
+    // List of const for module administration
     public const CUSTOM_TITLE       = 'Clippings cart enhanced';
     public const CUSTOM_DESCRIPTION = 'Add records from your family tree to the clippings cart and execute an action on them.';
     public const CUSTOM_MODULE      = 'hh_clippings_cart_enhanced';
@@ -150,7 +150,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         'Submitter'  => SubmitterPage::class,
     ];
 
-    // types ofnrecords
+    // Types of records
     private const TYPES_OF_RECORDS = [
         'Individual' => Individual::class,
         'Family'     => Family::class,
@@ -162,9 +162,13 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         'Submitter'  => Submitter::class,
     ];
 
-    public function __construct(GedcomExportService $gedcom_export_service, UserService $user_service)
+    /** @var GedcomExportService */
+    private $gedcomExportService;
+
+    public function __construct(GedcomExportService $gedcomExportService, UserService $userService)
     {
-        parent::__construct($gedcom_export_service, $user_service);
+        $this->gedcomExportService = $gedcomExportService;
+        parent::__construct($gedcomExportService, $userService);
     }
 
     /**
@@ -194,7 +198,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
      */
     public function description(): string
     {
-        /* I18N: Description of the “Clippings cart” module */
+        /* I18N: Description of the module */
         return I18N::translate(self::CUSTOM_DESCRIPTION);
     }
 
@@ -671,67 +675,6 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
     }
 
     /**
-     * get GEDCOM records from array with XREF ready to write them to a file and export media files
-     *
-     * @param array $xrefs
-     * @param Tree $tree
-     * @param int $access_level
-     * @param Filesystem $zip_filesystem
-     * @param FilesystemInterface|null $media_filesystem
-     *
-     * @return Collection
-     *
-     * @throws FileExistsException
-     * @throws FileNotFoundException
-     */
-    private function getRecords(array $xrefs, Tree $tree, int $access_level, Filesystem $zip_filesystem, FilesystemInterface $media_filesystem = null): Collection
-    {
-        $records = new Collection();
-        $path = $tree->getPreference('MEDIA_DIRECTORY');        // media file prefix
-
-        foreach ($xrefs as $xref) {
-            $object = Registry::gedcomRecordFactory()->make($xref, $tree);
-            // The object may have been deleted since we added it to the cart....
-            if ($object instanceof GedcomRecord) {
-                $record = $object->privatizeGedcom($access_level);
-                // Remove links to objects that aren't in the cart
-                preg_match_all('/\n1 ' . Gedcom::REGEX_TAG . ' @(' . Gedcom::REGEX_XREF . ')@(\n[2-9].*)*/', $record, $matches, PREG_SET_ORDER);
-                foreach ($matches as $match) {
-                    if (!in_array($match[1], $xrefs, true)) {
-                        $record = str_replace($match[0], '', $record);
-                    }
-                }
-                preg_match_all('/\n2 ' . Gedcom::REGEX_TAG . ' @(' . Gedcom::REGEX_XREF . ')@(\n[3-9].*)*/', $record, $matches, PREG_SET_ORDER);
-                foreach ($matches as $match) {
-                    if (!in_array($match[1], $xrefs, true)) {
-                        $record = str_replace($match[0], '', $record);
-                    }
-                }
-                preg_match_all('/\n3 ' . Gedcom::REGEX_TAG . ' @(' . Gedcom::REGEX_XREF . ')@(\n[4-9].*)*/', $record, $matches, PREG_SET_ORDER);
-                foreach ($matches as $match) {
-                    if (!in_array($match[1], $xrefs, true)) {
-                        $record = str_replace($match[0], '', $record);
-                    }
-                }
-
-                $records->add($record);
-
-                if (($media_filesystem !== null) && ($object instanceof Media)) {
-                    // Add the media files to the archive
-                    foreach ($object->mediaFiles() as $media_file) {
-                        $from = $media_file->filename();
-                        $to = $path . $media_file->filename();
-                        if (!$media_file->isExternal() && $media_filesystem->has($from) && !$zip_filesystem->has($to)) {
-                            $zip_filesystem->writeStream($to, $media_filesystem->readStream($from));
-                        }
-                    }
-                }
-            }
-        }
-        return $records;
-    }
-
-    /**
      * @param ServerRequestInterface $request
      *
      * @return ResponseInterface
@@ -1079,47 +1022,15 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
     }
 
     /**
-     * add all circles (loops) of individuals in a tree to the clippings cart
+     * add all circles (closed loops) of individuals in a tree to the clippings cart
+     * by adding individuals and their families without spouses to the clippings cart
      *
      * @param Tree $tree
      */
     protected function addAllCirclesToCart(Tree $tree): void
     {
-        $links = ['FAMS', 'FAMC','ALIA'];
-        // $rows is an array of objects with two pointers:
-        // l_from => family XREF and
-        // l_to => individual XREF (spouse/partner)
-        $rows = DB::table('link')
-            ->where('l_file', '=', $tree->id())
-            ->whereIn('l_type', $links)
-            ->select(['l_from', 'l_to'])
-            ->get();
-
-        $graph = DB::table('individuals')
-            ->where('i_file', '=', $tree->id())
-            ->pluck('i_id')
-            ->mapWithKeys(static function (string $xref): array {
-                return [$xref => []];
-            })
-            ->all();
-
-        foreach ($rows as $row) {
-            $graph[$row->l_from][$row->l_to] = 1;
-            $graph[$row->l_to][$row->l_from] = 1;
-        }
-        // $graph is now a square matrix with XREFS of individuals and families in rows and columns
-        // value of $graph is 0 or 1 if individual belongs to a family or a family contains an individual
-
-        // eliminate all leaves of the tree as long as there are leaves existing
-        $count = count(array_keys($graph));
-        do {
-            $count2 = $count;
-            $this->reduceGraph($graph);
-            $count = count(array_keys($graph));
-        } while ($count2 > $count);
-
-        // add now individuals and families to the clippings cart based on the remaining XREFs in $graph
-        foreach (array_keys($graph) as $xref) {
+        $circles = new AncestorCircles($tree, ['FAMS', 'FAMC','ALIA']);
+        foreach ($circles->getXrefs() as $xref) {
             $object = Registry::individualFactory()->make($xref, $tree);
             if ($object instanceof Individual) {
                 if ($object->canShow()) {
@@ -1130,25 +1041,6 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
                 if ($object instanceof Family && $object->canShow()) {
                     $this->addFamilyWithoutSpousesToCart($object);
                 }
-            }
-        }
-    }
-
-    /**
-     * eliminate all the leaves in the tree
-     *
-     * @param array $graph
-     */
-    protected function reduceGraph(array &$graph)
-    {
-        foreach ($graph as $column => $array) {
-            if (count($graph[$column]) == 0) {                      // not connected
-                unset($graph[$column]);
-            } elseif (count($graph[$column]) == 1) {                // leave
-                foreach ($graph[$column] as $index => $value) {
-                    unset($graph[$index][$column]);
-                }
-                unset($graph[$column]);
             }
         }
     }
@@ -1181,9 +1073,9 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
      * tbd: instead of writing a GEDCOM file: generate an internal data structure (JSON?) and integrate TAM instead of using an external application
      *
      * @param ServerRequestInterface $request
+     *
      * @return ResponseInterface
-     * @throws FileExistsException
-     * @throws FileNotFoundException
+     *
      */
     public function postVisualizeTAMAction(ServerRequestInterface $request): ResponseInterface
     {
@@ -1193,10 +1085,8 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         $params = (array) $request->getParsedBody();
         $accessLevel = $this->getAccessLevel($params, $tree);
 
-        $cart = Session::get('cart', []);
-        $xrefs = array_keys($cart[$tree->name()] ?? []);
-        $xrefs = array_map('strval', $xrefs); // PHP converts numeric keys to integers.
-
+        $xrefs = $this->getXrefsInCart($tree);
+        // keep only XREFs used by Individual or Family records
         foreach ($xrefs as $index => $xref) {
             $object = Registry::gedcomRecordFactory()->make($xref, $tree);
             if (!($object instanceof Individual) && !($object instanceof Family)) {
@@ -1208,7 +1098,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         $zip_adapter    = new ZipArchiveAdapter($temp_zip_file);
         $zip_filesystem = new Filesystem($zip_adapter);
 
-        $records = $this->getRecords($xrefs, $tree, $accessLevel, $zip_filesystem);
+        $records = $this->getRecordsForExport($tree, $xrefs, $accessLevel, $zip_filesystem);
 
         $stream = fopen('php://temp', 'wb+');
         if ($stream === false) {
@@ -1217,7 +1107,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
 
         // We have already applied privacy filtering, so do not do it again.
         $encoding = 'UTF-8';
-        //parent::gedcom_export_service->export($tree, $stream, false, $encoding, Auth::PRIV_HIDE, '', $records);
+        $this->gedcomExportService->export($tree, $stream, false, $encoding, Auth::PRIV_HIDE, '', $records);
         rewind($stream);
 
         // Finally, add the GEDCOM file to the .ZIP file.
@@ -1287,24 +1177,11 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
      */
     private function countRecordTypesInCart(Tree $tree, array $recordTypes): array
     {
-        $cart = Session::get('cart', []);
-
-        $xrefs = array_keys($cart[$tree->name()] ?? []);
-        $xrefs = array_map('strval', $xrefs); // PHP converts numeric keys to integers.
-
-        // Fetch all the records in the cart.
-        $records = array_map(static function (string $xref) use ($tree): ?GedcomRecord {
-            return Registry::gedcomRecordFactory()->make($xref, $tree);
-        }, $xrefs);
-
-        // Some records may have been deleted after they were added to the cart.
-        $records = array_filter($records);
-
-        // Count types
+        $records = $this->getRecordsInCart($tree);
         $recordTypesCount = [];                  // type => count
+        $recordTypesCount['all'] = count($records);
         foreach ($recordTypes as $key => $class) {
             foreach ($records as $record) {
-                //echo "<br> record: $record->fullName() . ";
                 if ($record instanceof $class) {
                     if (array_key_exists($key, $recordTypesCount)) {
                         $recordTypesCount[$key]++;
@@ -1314,8 +1191,124 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
                 }
             }
         }
-        $recordTypesCount['all'] = count($records);
         return $recordTypesCount;
     }
 
+    /**
+     * Get the records in the clippings cart.
+     *
+     * @param Tree $tree
+     *
+     * @return array
+     */
+    private function getRecordsInCart(Tree $tree): array
+    {
+        $xrefs = $this->getXrefsInCart($tree);
+        $records = array_map(static function (string $xref) use ($tree): ?GedcomRecord {
+            return Registry::gedcomRecordFactory()->make($xref, $tree);
+        }, $xrefs);
+
+        // Some records may have been deleted after they were added to the cart.
+        return array_filter($records);
+    }
+
+    /**
+     * Get the Xrefs in the clippings cart.
+     *
+     * @param Tree $tree
+     *
+     * @return array
+     */
+    private function getXrefsInCart(Tree $tree): array
+    {
+        $cart = Session::get('cart', []);
+        $xrefs = array_keys($cart[$tree->name()] ?? []);
+        $xrefs = array_map('strval', $xrefs);           // PHP converts numeric keys to integers.
+        return $xrefs;
+    }
+
+    /**
+     * get GEDCOM records from array with XREFs ready to write them to a file
+     * and export media files to zip file
+     *
+     * @param array $xrefs
+     * @param Tree $tree
+     * @param int $access_level
+     * @param Filesystem $zip_filesystem
+     * @param FilesystemInterface|null $media_filesystem
+     *
+     * @return Collection
+     */
+    private function getRecordsForExport(Tree $tree, array $xrefs, int $access_level, Filesystem $zip_filesystem, FilesystemInterface $media_filesystem = null): Collection
+    {
+        $records = new Collection();
+        foreach ($xrefs as $xref) {
+            $object = Registry::gedcomRecordFactory()->make($xref, $tree);
+            // The object may have been deleted since we added it to the cart ...
+            if ($object instanceof GedcomRecord) {
+                $record = $object->privatizeGedcom($access_level);
+                $record = $this->removeLinksToUnusedObjects($record, $xrefs);
+                $records->add($record);
+
+                if (($media_filesystem !== null) && ($object instanceof Media)) {
+                    $this->addMediaFilesToArchive($tree, $object, $zip_filesystem, $media_filesystem);
+                }
+            }
+        }
+        return $records;
+    }
+
+    /**
+     * remove links to objects that aren't in the cart
+     *
+     * @param string $record
+     * @param array $xrefs
+     *
+     * @return string
+     */
+    private function removeLinksToUnusedObjects(string $record, array $xrefs): string
+    {
+        preg_match_all('/\n1 ' . Gedcom::REGEX_TAG . ' @(' . Gedcom::REGEX_XREF . ')@(\n[2-9].*)*/', $record, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            if (!in_array($match[1], $xrefs, true)) {
+                $record = str_replace($match[0], '', $record);
+            }
+        }
+        preg_match_all('/\n2 ' . Gedcom::REGEX_TAG . ' @(' . Gedcom::REGEX_XREF . ')@(\n[3-9].*)*/', $record, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            if (!in_array($match[1], $xrefs, true)) {
+                $record = str_replace($match[0], '', $record);
+            }
+        }
+        preg_match_all('/\n3 ' . Gedcom::REGEX_TAG . ' @(' . Gedcom::REGEX_XREF . ')@(\n[4-9].*)*/', $record, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            if (!in_array($match[1], $xrefs, true)) {
+                $record = str_replace($match[0], '', $record);
+            }
+        }
+        return $record;
+    }
+
+    /**
+     * add the media files to the archive
+     *
+     * @param Tree $tree
+     * @param Media $object
+     * @param Filesystem $zip_filesystem
+     * @param FilesystemInterface|null $media_filesystem
+     *
+     * @throws FileExistsException
+     * @throws FileNotFoundException
+     */
+    private function addMediaFilesToArchive(Tree $tree, Media $object, Filesystem $zip_filesystem, FilesystemInterface $media_filesystem = null): void
+    {
+        $path = $tree->getPreference('MEDIA_DIRECTORY');        // media file prefix
+        foreach ($object->mediaFiles() as $media_file) {
+            $from = $media_file->filename();
+            $to = $path . $media_file->filename();
+            if (!$media_file->isExternal() && $media_filesystem->has($from) && !$zip_filesystem->has($to)) {
+                $zip_filesystem->writeStream($to, $media_filesystem->readStream($from));
+            }
+        }
+    }
 }
