@@ -46,10 +46,10 @@ As input functions there are
 The user can then delete selected records or groups of records of the same type
 in the clippings cart or delete the clippings cart completely.
 
-An action initiated by the user then takes place on the objects in the clippings cart, such as
+An action initiated by the user then takes place on the records in the clippings cart, such as
 * the export to a GEDCOM zip file, as in the actual clippings cart module
 * the display of the objects in list form with the possibility of sorting and filtering this list (tbd)
-* the transfer of the objects in the clippings cart to new functions that visualize this data or analyze it statistically.
+* the transfer of the records in the clippings cart to new functions that visualize this data or analyze it statistically.
 Such a function could be for example [TAM](https://github.com/rpreiner/tam) (Topographic Attribute Map) or [Lineage](https://github.com/huhwt/lineage).
 
 <a name="screenshots"></a>
@@ -82,8 +82,7 @@ If you are using the Vesta clippings cart module: the integration is an open iss
 
 This section documents installation instructions for this module.
 
-1. Make a database backup.
-2. Download the [latest release](https://github.com/hartenthaler/hh_clippings_cart_enhanced/releases/latest).
+1. Download the [latest release](https://github.com/hartenthaler/hh_clippings_cart_enhanced/releases/latest).
 3. Unzip the package into your `webtrees/modules_v4` directory of your web server.
 4. Rename the folder to `hh_clippings_cart_enhanced`. It's safe to overwrite the respective directory if it already exists.
 5. Login to **webtrees** as administrator, go to <span class="pointer">Control Panel/Modules/Genealogy/Menus</span>,

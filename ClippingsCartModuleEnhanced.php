@@ -27,19 +27,19 @@
 /*
  * tbd
  * ---
- * test: access rights for members and visitors
- * code: make this module working together with the Vesta clippings cart extension module
  * code: search string "allows you to take extracts" and adapt it to new module functions
  * code: show options only if they will add new elements to the clippings cart otherwise grey them out
  * code: when adding descendents or ancestors then allow the specification the number of generations (like in webtrees 1): 1..max_exist_gen
  * code: when adding global sets: instead of using radio buttons use select buttons?
- * code: remove as a menu: delete all records or a group of records (type: all OBJE, all SOUR, ...)
- * code: integrate TAM instead of exporting GEDCOM file
+ * code: integrate TAM instead of exporting GEDCOM file for external TAM application
  * code: integrate Lineage
  * code: use GVExport (GraphViz) code for visualization
  * code: implement webtrees 1 module "branch export" (starting person and several stop persons/families (stored as profile)
- * code: new action: enhanced list using webtrees standard list for each type of records
+ * code: new function to add all records of a tree to the clippings cart
+ * code: new action: enhanced list using webtrees standard lists for each type of records
+ * test: access rights for members and visitors
  * translation: translate all new strings to German using po/mo
+ * other module - Vesta clippings cart extension: make this module working together with the Vesta module
  * other module - admin module "unconnected individuals": add button to each group "sne dto clippings cart"
  * other module - "extended family": send filtered INDI and FAM records to clippings cart
  * other module - search: send search results to clippings cart
@@ -52,7 +52,6 @@ namespace Hartenthaler\Webtrees\Module\ClippingsCart;
 
 use Aura\Router\Route;
 use Fisharebest\Webtrees\Auth;
-use Fisharebest\Webtrees\Family;
 use Fisharebest\Webtrees\Gedcom;
 use Fisharebest\Webtrees\GedcomRecord;
 use Fisharebest\Webtrees\Http\RequestHandlers\FamilyPage;
@@ -65,7 +64,13 @@ use Fisharebest\Webtrees\Http\RequestHandlers\SourcePage;
 use Fisharebest\Webtrees\Http\RequestHandlers\SubmitterPage;
 use Fisharebest\Webtrees\I18N;
 use Fisharebest\Webtrees\Individual;
+use Fisharebest\Webtrees\Family;
 use Fisharebest\Webtrees\Media;
+use Fisharebest\Webtrees\Location;
+use Fisharebest\Webtrees\Note;
+use Fisharebest\Webtrees\Repository;
+use Fisharebest\Webtrees\Source;
+use Fisharebest\Webtrees\Submitter;
 use Fisharebest\Webtrees\Menu;
 use Fisharebest\Webtrees\Module\ClippingsCartModule;
 use Fisharebest\Webtrees\Module\ModuleCustomInterface;
@@ -130,7 +135,8 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
 
     // What are the options to delete records in the clippings cart?
     private const EMPTY_ALL = 'all %d records';
-    private const EMPTY_SET = 'set of records by type:';
+    private const EMPTY_SET = 'set of records by type';
+    private const EMPTY_SELECTED = 'selected records';
 
     // Routes that have a record which can be added to the clipboard
     private const ROUTES_WITH_RECORDS = [
@@ -142,6 +148,18 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         'Repository' => RepositoryPage::class,
         'Source'     => SourcePage::class,
         'Submitter'  => SubmitterPage::class,
+    ];
+
+    // types ofnrecords
+    private const TYPES_OF_RECORDS = [
+        'Individual' => Individual::class,
+        'Family'     => Family::class,
+        'Media'      => Media::class,
+        'Location'   => Location::class,
+        'Note'       => Note::class,
+        'Repository' => Repository::class,
+        'Source'     => Source::class,
+        'Submitter'  => Submitter::class,
     ];
 
     public function __construct(GedcomExportService $gedcom_export_service, UserService $user_service)
@@ -246,7 +264,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
      * AddSource:       add source record
      * AddSubmitter:    add submitter record
      * Global:          add global sets of records (partner chains, circles)
-     * Empty:           empty clippings cart
+     * Empty:           delete records in clippings cart
      * Execute:         execute an action on records in the clippings cart (export to GEDCOM file, visualize)
      *
      * @param Tree $tree
@@ -267,9 +285,10 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
 
         $submenus = [
             new Menu($this->title() . ' ' . $badge, route('module', [
-                'module' => $this->name(),
-                'action' => 'Show',
-                'tree'   => $tree->name(),
+                'module'     => $this->name(),
+                'action'     => 'Show',
+                'descrition' => $this->description(),
+                'tree'       => $tree->name(),
             ]), 'menu-clippings-cart', ['rel' => 'nofollow']),
         ];
 
@@ -553,9 +572,10 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         }
 
         $url = route('module', [
-            'module' => $this->name(),
-            'action' => 'Show',
-            'tree'   => $tree->name(),
+            'module'     => $this->name(),
+            'action'     => 'Show',
+            'descrition' => $this->description(),
+            'tree'       => $tree->name(),
         ]);
 
         return redirect($url);
@@ -760,6 +780,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
                 $url = route('module', [
                     'module' => $this->name(),
                     'action' => 'Show',
+                    'descrition' => $this->description(),
                     'tree'   => $tree->name(),
                 ]);
                 break;
@@ -780,21 +801,17 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         $tree = $request->getAttribute('tree');
         assert($tree instanceof Tree);
 
-        $title = I18N::translate('Delete all records in the clippings cart or a set grouped by type of records');
+        $title = I18N::translate('Delete all records, a set of records of the same type, or selected records.');
         $headingSelection = I18N::translate('Delete');
-        $recordTypes = $this->countRecordTypesInCart($tree, self::ROUTES_WITH_RECORDS);
-        $recordTypes['Test1']=1;
-        //$recordTypes['Test2']=2;
-        $sum = 0;
-        foreach ($recordTypes as $count) {
-            $sum += $count;
-        }
-        $options[self::EMPTY_ALL] = I18N::plural('%d record',self::EMPTY_ALL, $sum, $sum);
+        $recordTypes = $this->countRecordTypesInCart($tree, self::TYPES_OF_RECORDS);
+        $options[self::EMPTY_ALL] = I18N::plural('this %d record',self::EMPTY_ALL, $recordTypes['all'], $recordTypes['all']);
+        unset($recordTypes['all']);
 
         if (count($recordTypes) > 1) {
             $headingTypes = I18N::translate('Delete all records of a type');
             $recordTypesList = implode(', ', array_keys($recordTypes));
-            $options[self::EMPTY_SET] = I18N::translate(self::EMPTY_SET) . ' ' . $recordTypesList;
+            $options[self::EMPTY_SET] = I18N::translate(self::EMPTY_SET) . ': ' . $recordTypesList;
+            $options[self::EMPTY_SELECTED] = I18N::translate(self::EMPTY_SELECTED);
         } else {
             $headingTypes = '';
         }
@@ -826,27 +843,65 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
 
         switch ($option) {
             case self::EMPTY_ALL:
-                $xref = $request->getQueryParams()['xref'] ?? '';
                 $cart = Session::get('cart', []);
-                unset($cart[$tree->name()][$xref]);
+                $cart[$tree->name()] = [];
                 Session::put('cart', $cart);
                 $url = route('module', [
-                    'module' => $this->name(),
-                    'action' => 'Show',
-                    'tree'   => $tree->name(),
+                    'module'      => $this->name(),
+                    'action'      => 'Show',
+                    'description' => $this->description(),
+                    'tree'        => $tree->name(),
+                ]);
+                break;
+
+            case self::EMPTY_SET:
+                // tbd
+                $url = route('module', [
+                    'module'      => $this->name(),
+                    'action'      => 'Show',
+                    'description' => $this->description(),
+                    'tree'        => $tree->name(),
                 ]);
                 break;
 
             default;
-            case self::EMPTY_SET:
-                // tbd
+            case self::EMPTY_SELECTED:
                 $url = route('module', [
-                    'module' => $this->name(),
-                    'action' => 'Show',
-                    'tree'   => $tree->name(),
+                    'module'      => $this->name(),
+                    'action'      => 'Show',
+                    'description' => $this->description(),
+                    'tree'        => $tree->name(),
                 ]);
                 break;
         }
+
+        return redirect($url);
+    }
+
+    /**
+     * delete one record from the clippings cart
+     *
+     * @param ServerRequestInterface $request
+     *
+     * @return ResponseInterface
+     */
+    public function postRemoveAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $tree = $request->getAttribute('tree');
+        assert($tree instanceof Tree);
+
+        $xref = $request->getQueryParams()['xref'] ?? '';
+
+        $cart = Session::get('cart', []);
+        unset($cart[$tree->name()][$xref]);
+        Session::put('cart', $cart);
+
+        $url = route('module', [
+            'module'      => $this->name(),
+            'action'      => 'Show',
+            'description' => $this->description(),
+            'tree'        => $tree->name(),
+        ]);
 
         return redirect($url);
     }
@@ -1249,6 +1304,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         $recordTypesCount = [];                  // type => count
         foreach ($recordTypes as $key => $class) {
             foreach ($records as $record) {
+                //echo "<br> record: $record->fullName() . ";
                 if ($record instanceof $class) {
                     if (array_key_exists($key, $recordTypesCount)) {
                         $recordTypesCount[$key]++;
@@ -1258,7 +1314,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
                 }
             }
         }
-
+        $recordTypesCount['all'] = count($records);
         return $recordTypesCount;
     }
 
