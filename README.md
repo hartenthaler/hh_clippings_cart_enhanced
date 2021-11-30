@@ -31,7 +31,7 @@ This Readme contains the following main sections
 
 This custom module replaces the original 'Clippings Cart' module.
 The design concept for the enhanced clippings cart is shown in the following diagram:
-<p align="center"><img src="resources/docu/ClippingsCartEnhanced.png" alt="new concept for enhanced clippings cart" align="center" width="100%"></p>
+<p align="center"><img src="docu/ClippingsCartEnhanced.png" alt="new concept for enhanced clippings cart" align="center" width="100%"></p>
 
 Various functions can collect records in the clippings cart and these records could then be passed on to various evaluation / export / visualization functions.
 The user of the module can decide which records should be sent to the clippings cart
@@ -58,30 +58,71 @@ Such a function could be for example [TAM](https://github.com/rpreiner/tam) (Top
 <a name="screenshots"></a>
 ## Screenshots
 
-Screenshot of the new menu
-<p align="center"><img src="resources/docu/Screenshot_Menu.png" alt="Screenshot of main menu" align="center" width="80%"></p>
+### Screenshots of menus
+#### Screenshot of the new menu
+<p align="center"><img src="docs/Screenshot_Menu.png" alt="Screenshot of main menu" align="center" width="80%"></p>
 
-Screenshot of menu to add global sets of records for a tree
-<p align="center"><img src="resources/docu/Screenshot_ViewAddGlobal.png" alt="Screenshot of menu to add global sets of records" align="center" width="80%"></p>
+#### Screenshot of menu to add global sets of records for a tree
+<p align="center"><img src="docs/Screenshot_ViewAddGlobal.png" alt="Screenshot of menu to add global sets of records" align="center" width="80%"></p>
 
-Screenshot of new menu to delete records in the clippings cart
-<p align="center"><img src="resources/docu/Screenshot_ViewEmpty.png" alt="Screenshot of menu to delete records" align="center" width="80%"></p>
+#### Screenshot of new menu to delete records in the clippings cart
+<p align="center"><img src="docs/Screenshot_ViewEmpty.png" alt="Screenshot of menu to delete records" align="center" width="80%"></p>
 
-Screenshot of new menu to execute actions on the records in the clippings cart
-<p align="center"><img src="resources/docu/Screenshot_ExecuteActions.png" alt="Screenshot of menu to execute actions" align="center" width="80%"></p>
+#### Screenshot of new menu to execute actions on the records in the clippings cart
+<p align="center"><img src="docs/Screenshot_ExecuteActions.png" alt="Screenshot of menu to execute actions" align="center" width="80%"></p>
 
-Screenshot using TAM for a tree with more than 10.000 persons
-<p align="center"><img src="resources/docu/Screenshot_Tree.png" alt="Screenshot of large tree" align="center" width="80%"></p>
+### Screenshots of new visualisation possibilities
+The following charts are produced by an external application TAM.
+It is planned to integrate TAM into webtrees
+so that export/import is not any longer necessary.
 
-Screenshot using TAM for a visualisation of all ancestor circles in this tree
-(removing all leaves in this tree recursively)
-<p align="center"><img src="resources/docu/Screenshot_Circles.png" alt="Screenshot of circles" align="center" width="80%"></p>
+#### Screenshot using TAM for a tree with more than 10.000 persons
+<p align="center"><img src="docs/Screenshot_Tree.png" alt="Screenshot of large tree" align="center" width="80%"></p>
+This image was produced by exporting a complete tree from webtrees as GEDCOM file
+using the administrator menu. Then this file was imported to TAM.
+It is planned to add a new option "add all records to the clippings cart"
+to the "global add menu" of this module.
 
-Screenshot using TAM to show a H diagram (comparable to webtrees chart "compact tree")
-<p align="center"><img src="resources/docu/Screenshot_H_diagram.png" alt="Screenshot of H diagram" align="center" width="80%"></p>
+#### Screenshot using TAM for a visualisation of all ancestor circles in this tree
+<p align="center"><img src="docs/Screenshot_Circles.png" alt="Screenshot of circles" align="center" width="80%"></p>
+<p align="center"><img src="docs/Screenshot_Circles_Background.png" alt="Screenshot of circles" align="center" width="80%"></p>
+This chart was produced using the new "global add menu"
+selecting "add all circles".
+This function removes all leaves in a tree recursively.
+A family with two parents and her child is a trivial circle
+(child -> mother -> husband -> child) and is therefore not included.
+Circles are a result for example when cousins are married together.
+Such circles are responsible for pedigree collapse
+(in German: Ahnenschwund or Implex). 
+Following the connections of marriage or partnership circles can be found 
+if two families are interconnected by more than one marriage.
+Maybe such circles can have a length of 30, 40, or 50 steps.
+They can connect several families together and it is not easy to find them.
+For example my parents are connected together by several such circles
+(beside the trivial connection by their own marriage).
+In webtrees you can search for such connections by using
+Charts / Relationships / Find all possible relationships.
+But up to now there was no possibility to show all such circles in a tree.
 
-Screenshot using TAM for a partner chain with 30 partners of partners of partners ...
-<p align="center"><img src="resources/docu/Screenshot_PartnerChains.png" alt="Screenshot of partner chains" align="center" width="80%"></p>
+### Screenshot using TAM to show a H diagram (comparable to webtrees chart "compact tree")
+<p align="center"><img src="docs/Screenshot_H_diagram.png" alt="Screenshot of H diagram" align="center" width="80%"></p>
+A H diagramm is a very compact ancestor diagram showing the proband and
+a few generations of his ancestors. To produce such a diagram you have to select the proband,
+add 3, 4, or 5 generations of his ancestors to the clippings cart. Then use the action menu
+and export these records using the TAM option.
+Then import the produced GEDCOM file to your TAM application.
+
+#### Screenshot using TAM for a partner chain with 30 partners of partners of partners ...
+<p align="center"><img src="docs/Screenshot_PartnerChains.png" alt="Screenshot of partner chains" align="center" width="80%"></p>
+<p align="center"><img src="docs/Screenshot_PartnerChains_Background.png" alt="Screenshot of partner chains" align="center" width="80%"></p>
+A partner chain is a chain of partners of partners of partners of ...
+If one partner of marriage was married before or later to another partner,
+this is a chain of three partners.
+Trivial chains consisting only of two partners (husband/wife) are ignored.
+Maybe one of the partners was married three or more times, then the chain becomes
+a tree of chains.
+There was up to now no possibility in webtrees to visualize such
+trees of partner chains.
 
 <a name="requirements"></a>
 ## Requirements
@@ -131,8 +172,8 @@ There are now, beside English and German, no other translations available.
 
 <a name="thanks"></a>
 ## Thank you
-Special thanks to [huhwt](https://github.com/huhwt/) for testing and suggestions.
 
+Special thanks to [huhwt](https://github.com/huhwt/) for testing, suggestions, and contributions.
 
 <a name="license"></a>
 ## License
