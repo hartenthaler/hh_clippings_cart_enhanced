@@ -5,7 +5,7 @@ use Fisharebest\Webtrees\I18N;
 /**
  * @var array<string,string> $options
  * @var string               $title
- * @var string               $headingSelection
+ * @var string               $label
  * @var string               $headingTypes
  * @var array                $recordTypes (string => int)
  * @var array                $selectedTypes
@@ -20,7 +20,7 @@ use Fisharebest\Webtrees\I18N;
 
     <div class="row form-group">
         <div class="col-sm-3 col-form-label wt-page-options-label">
-            <?= $headingSelection ?>
+            <?= $label ?>
         </div>
         <div class="col-sm-9 wt-page-options-value">
             <?= view('components/radios', ['name' => 'option', 'options' => $options, 'selected' => key($options)]) ?>
@@ -31,12 +31,14 @@ use Fisharebest\Webtrees\I18N;
         <fieldset class="form-group">
             <div class="row">
                 <div class="col-sm-3 col-form-label wt-page-options-label">
-                    <?= $headingTypes ?>
+                    <?= $label ?>
                 </div>
                 <div class="col-sm-9 wt-page-options-value pt-2">
                     <div id="delete-types">
                         <?php foreach ($recordTypes as $type => $count) : ?>
-                            <?= view('components/checkbox-inline', ['name' => 'recordTypes[$type]', 'id' => 'chkbx-' . $type, 'checked' => $selectedTypes, 'value' => $count, 'label' => $type]) ?>
+                            <?php $badge = view('components/badge', ['count' => $count]); ?>
+                            <?php $labelBox = $type . ' ' . $badge . '&nbsp;&nbsp;&nbsp;'; ?>
+                            <?= view('components/checkbox-inline', ['name' => 'recordTypes', 'id' => 'chkbx-' . $type, 'checked' => $selectedTypes, 'value' => $count, 'label' => $labelBox]) ?>
                         <?php endforeach ?>
                     </div>
                 </div>

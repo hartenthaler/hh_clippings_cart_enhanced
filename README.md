@@ -23,6 +23,7 @@ This Readme contains the following main sections
 * [Upgrade](#upgrade)
 * [Translation](#translation)
 * [Contact Support](#support)
+* [Thank you](#thanks)
 * [License](#license)
 
 <a name="description"></a>
@@ -58,26 +59,29 @@ Such a function could be for example [TAM](https://github.com/rpreiner/tam) (Top
 ## Screenshots
 
 Screenshot of the new menu
-<p align="center"><img src="resources/docu/Screenshot_Menu.png" alt="Screenshot of tab" align="center" width="80%"></p>
+<p align="center"><img src="resources/docu/Screenshot_Menu.png" alt="Screenshot of main menu" align="center" width="80%"></p>
 
 Screenshot of menu to add global sets of records for a tree
-<p align="center"><img src="resources/docu/Screenshot_ViewAddGlobal.png" alt="Screenshot of tab" align="center" width="80%"></p>
+<p align="center"><img src="resources/docu/Screenshot_ViewAddGlobal.png" alt="Screenshot of menu to add global sets of records" align="center" width="80%"></p>
 
 Screenshot of new menu to delete records in the clippings cart
-<p align="center"><img src="resources/docu/Screenshot_ViewEmpty.png" alt="Screenshot of tab" align="center" width="80%"></p>
+<p align="center"><img src="resources/docu/Screenshot_ViewEmpty.png" alt="Screenshot of menu to delete records" align="center" width="80%"></p>
+
+Screenshot of new menu to execute actions on the records in the clippings cart
+<p align="center"><img src="resources/docu/Screenshot_ExecuteActions.png" alt="Screenshot of menu to execute actions" align="center" width="80%"></p>
 
 Screenshot using TAM for a tree with more than 10.000 persons
-<p align="center"><img src="resources/docu/Screenshot_Tree.png" alt="Screenshot of tab" align="center" width="80%"></p>
+<p align="center"><img src="resources/docu/Screenshot_Tree.png" alt="Screenshot of large tree" align="center" width="80%"></p>
 
 Screenshot using TAM for a visualisation of all ancestor circles in this tree
 (removing all leaves in this tree recursively)
-<p align="center"><img src="resources/docu/Screenshot_Circles.png" alt="Screenshot of tab" align="center" width="80%"></p>
+<p align="center"><img src="resources/docu/Screenshot_Circles.png" alt="Screenshot of circles" align="center" width="80%"></p>
 
 Screenshot using TAM to show a H diagram (comparable to webtrees chart "compact tree")
-<p align="center"><img src="resources/docu/Screenshot_H_diagram.png" alt="Screenshot of tab" align="center" width="80%"></p>
+<p align="center"><img src="resources/docu/Screenshot_H_diagram.png" alt="Screenshot of H diagram" align="center" width="80%"></p>
 
-Screenshot using TAM for a partner chain with 30 partners of partners of partners 
-<p align="center"><img src="resources/docu/Screenshot_PartnerChains.png" alt="Screenshot of tab" align="center" width="80%"></p>
+Screenshot using TAM for a partner chain with 30 partners of partners of partners ...
+<p align="center"><img src="resources/docu/Screenshot_PartnerChains.png" alt="Screenshot of partner chains" align="center" width="80%"></p>
 
 <a name="requirements"></a>
 ## Requirements
@@ -124,6 +128,11 @@ There are now, beside English and German, no other translations available.
 <span style="font-weight: bold;">Issues: </span>you can report errors raising an issue in this GitHub repository.
 
 <span style="font-weight: bold;">Forum: </span>general webtrees support can be found at the [webtrees forum](http://www.webtrees.net/)
+
+<a name="thanks"></a>
+## Thank you
+Special thanks to [huhwt](https://github.com/huhwt/) for testing and suggestions.
+
 
 <a name="license"></a>
 ## License

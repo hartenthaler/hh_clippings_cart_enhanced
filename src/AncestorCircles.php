@@ -7,6 +7,10 @@ namespace Hartenthaler\Webtrees\Module\ClippingsCart;
 use Fisharebest\Webtrees\Tree;
 use Illuminate\Database\Capsule\Manager as DB;
 
+// array functions
+use function count;
+use function array_keys;
+
 class AncestorCircles
 {
     /**

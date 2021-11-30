@@ -16,14 +16,10 @@ use Fisharebest\Webtrees\Tree;
 
 <h2 class="wt-page-title"><?= $title ?></h2>
 
-<p>
-    <?= $description ?>
-</p>
+<p><?= $title /* $description */ ?></p>
 
 <?php if ($records === []) : ?>
-<p>
-    <?= I18N::translate('Clippings cart is empty.') ?>
-</p>
+    <p><?= I18N::translate('Clippings cart is empty.') ?></p>
 <?php else : ?>
     <table class="table wt-facts-table">
         <thead>
