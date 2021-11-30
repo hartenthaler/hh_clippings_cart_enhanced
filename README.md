@@ -53,7 +53,8 @@ An action initiated by the user then takes place on the records in the clippings
 * the export to a GEDCOM zip file, as in the actual clippings cart module
 * the display of the objects in list form with the possibility of sorting and filtering this list (tbd)
 * the transfer of the records in the clippings cart to new functions that visualize this data or analyze it statistically.
-Such a function could be for example [TAM](https://github.com/rpreiner/tam) (Topographic Attribute Map) or [Lineage](https://github.com/huhwt/lineage).
+Such a function could be for example a link-node-diagram like
+[TAM](https://github.com/rpreiner/tam) (Topographic Attribute Map) or [Lineage](https://github.com/huhwt/lineage).
 
 <a name="screenshots"></a>
 ## Screenshots
@@ -94,23 +95,32 @@ A family with two parents and her child is a trivial circle
 Circles are a result for example when cousins are married together.
 Such circles are responsible for pedigree collapse
 (in German: Ahnenschwund or Implex). 
-Following the connections of marriage or partnership circles can be found 
+Following the connections of marriage or partnership, circles can be found 
 if two families are interconnected by more than one marriage.
 Maybe such circles can have a length of 30, 40, or 50 steps.
 They can connect several families together and it is not easy to find them.
+Such long distant connections in a tree are interconnecting different parts
+of a family. I call them there sometimes "ancestor Autobahn".
+The first Autobahn I built in my tree, many years ago,
+was connection to Johann Wolfgang von Goethe in more than 50 steps.
+
 For example my parents are connected together by several such circles
 (beside the trivial connection by their own marriage).
 In webtrees you can search for such connections by using
 Charts / Relationships / Find all possible relationships.
 But up to now there was no possibility to show all such circles in a tree.
 
-### Screenshot using TAM to show a H diagram (comparable to webtrees chart "compact tree")
+### Screenshot using TAM to show a H diagram
 <p align="center"><img src="docs/Screenshot_H_diagram.png" alt="Screenshot of H diagram" align="center" width="80%"></p>
 A H diagramm is a very compact ancestor diagram showing the proband and
-a few generations of his ancestors. To produce such a diagram you have to select the proband,
+a few generations of his ancestors.
+One example is the webtrees chart "compact tree".
+To produce such a diagram using TAM, you have to select the proband,
 add 3, 4, or 5 generations of his ancestors to the clippings cart. Then use the action menu
 and export these records using the TAM option.
 Then import the produced GEDCOM file to your TAM application.
+Now you have to place the persons and families
+manually to their right position by drag and drop.
 
 #### Screenshot using TAM for a partner chain with 30 partners of partners of partners ...
 <p align="center"><img src="docs/Screenshot_PartnerChains.png" alt="Screenshot of partner chains" align="center" width="80%"></p>
@@ -145,7 +155,7 @@ This section documents installation instructions for this module.
    and find the module. It will be called "Clippings cart enhanced". Check if it has a tick for "Enabled".
 6. Edit this entry to set the access level for each tree and to position the menu item to suit your preferences.
 7. You can deactivate the standard module "clippings cart".
-8. Finally, click SAVE, to complete the installation.
+8. Finally, click SAVE, to complete the configuration.
 
 <a name="upgrade"></a>
 ## Upgrade
