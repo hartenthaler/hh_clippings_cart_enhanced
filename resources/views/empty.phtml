@@ -6,7 +6,7 @@ use Fisharebest\Webtrees\I18N;
  * @var array<string,string> $options
  * @var string               $title
  * @var string               $label
- * @var string               $headingTypes
+ * @var string               $labelType
  * @var array                $recordTypes (string => int)
  * @var array                $selectedTypes
  */
@@ -31,7 +31,7 @@ use Fisharebest\Webtrees\I18N;
         <fieldset class="form-group">
             <div class="row">
                 <div class="col-sm-3 col-form-label wt-page-options-label">
-                    <?= $label ?>
+                    <?= $labelType ?>
                 </div>
                 <div class="col-sm-9 wt-page-options-value pt-2">
                     <div id="delete-types">

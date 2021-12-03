@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hartenthaler\Webtrees\Module\ClippingsCart;
+namespace Hartenthaler\Webtrees\Module\ClippingsCartEnhanced;
 
 use Fisharebest\Webtrees\Family;
 use Fisharebest\Webtrees\Individual;
@@ -20,13 +20,13 @@ class PartnerChains
     /**
      * constructor for this class
      *
-     * @param Individual $indi
+     * @param Individual $individual
      * @param Family $family
      */
-    public function __construct(Individual $indi, Family $family)
+    public function __construct(Individual $individual, Family $family)
     {
         $this->chainRootNode = (object)[];
-        $this->chainRootNode->indi = $indi;
+        $this->chainRootNode->indi = $individual;
         $this->chainRootNode->fam = $family;
 
         $stop = (object)[];                                 // avoid endless loops

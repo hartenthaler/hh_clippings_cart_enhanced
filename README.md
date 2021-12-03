@@ -6,12 +6,12 @@
 ![webtrees major version](https://img.shields.io/badge/webtrees-v2.0.x-green)
 ![Latest Release](https://img.shields.io/github/v/release/hartenthaler/hh_clippings_cart_emhanced)
 
+!!! This is an alpha version! Do not use it in a productive webtrees system! !!!
+
 This [webtrees](https://www.webtrees.net/) custom module replaces the original 'Clippings Cart' module.
 It offers additional possibilities to add records to the clippings cart
 and adds beside the possibility to export a GEDCOM zip-file the possibility
 to visualize the records in the clippings cart using a diagram.
-
-!!! This is a alpha version! Do not use it in a productive webtrees system! !!!
 
 ## Contents
 This Readme contains the following main sections
@@ -100,7 +100,8 @@ if two families are interconnected by more than one marriage.
 Maybe such circles can have a length of 30, 40, or 50 steps.
 They can connect several families together and it is not easy to find them.
 Such long distant connections in a tree are interconnecting different parts
-of a family. I call them there sometimes "ancestor Autobahn".
+of a family.
+I call them therefore sometimes "ancestor Autobahn".
 The first Autobahn I built in my tree, many years ago,
 was connection to Johann Wolfgang von Goethe in more than 50 steps.
 

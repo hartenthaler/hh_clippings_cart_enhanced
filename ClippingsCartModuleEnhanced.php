@@ -27,30 +27,32 @@
 /*
  * tbd
  * ---
- * code: "View" should use my view files and not webtrees view files in ressources/views/modules/clippings
+ * code: implement deleting of records in cart by type
  * code: when adding descendents or ancestors then allow the specification of the number of generations (like in webtrees 1): 1..max_exist_gen
  * code: check maximum generation level in the tree for a proband and use this in the add menus
- * code: implement deleting of records in cart by type
- * code: search string "allows you to take extracts" and adapt it to new module functions
- * code: add icons for all themes for "add function"
- * translation: translate all new strings to German using po/mo
  * code: empty cart: show block with "type delete" only if second option is selected
  * code: empty cart: button should be labeled "continue" and not "delete" if third option is selected
- * code: add TRAIT module
- * code: new global add function to add all records of a tree
+ * code: add TRAIT module (?)
  * code: show add options only if they will add new elements to the clippings cart otherwise grey them out
  * code: when adding global sets: instead of using radio buttons use select buttons?
- * code: integrate TAM instead of exporting GEDCOM file for external TAM application
- * code: integrate Lineage
- * code: use GVExport (GraphViz) code for visualization
- * code: implement webtrees 1 module "branch export" (starting person and several stop persons/families (stored as profile)
- * code: new function to add all circles for an individual or a family
- * code: new action: enhanced list using webtrees standard lists for each type of records
- * code: use TAM to visualize the hierarchy of location records
+ * translation: translate all new strings to German using po/mo
+ * issue: new global add function to add longest descendant-ancestor connection in a tree
+ *          (calculate for all individuals in the tree the most distant ancestor,
+ *           select the two individuals with the greatest distance,
+ *           add all their ancestors and descendants, remove all the leaves)
+ * issue: new global add function to add all records of a tree
+ * issue: integrate TAM instead of exporting GEDCOM file for external TAM application
+ * issue: integrate Lineage
+ * issue: use GVExport (GraphViz) code for visualization (?)
+ * issue: implement webtrees 1 module "branch export" (starting person and several stop persons/families (stored as profile)
+ * issue: new function to add all circles for an individual or a family
+ * issue: new action: enhanced list using webtrees standard lists for each type of records
+ * idea: use TAM to visualize the hierarchy of location records
  * test: access rights for members and visitors
  * other module - Vesta clippings cart extension: make this module working together with the Vesta module
  * other module - check conflict with JustLight: jc-theme-justlight\resources\views\modules\clippings\show.phtml
- * other module - admin module "unconnected individuals": add button to each group "send to clippings cart"
+ * other module - test with all other themes: Rural, Argon, ...
+ * other module - admin/control panel module "unconnected individuals": add button to each group "send to clippings cart"
  * other module - custom modul extended family: send filtered INDI and FAM records to clippings cart
  * other module - search: send search results to clippings cart
  * other module - list of persons with one surname: send them to clippings cart
@@ -58,7 +60,7 @@
 
 declare(strict_types=1);
 
-namespace Hartenthaler\Webtrees\Module\ClippingsCart;
+namespace Hartenthaler\Webtrees\Module\ClippingsCartEnhanced;
 
 use Fisharebest\Webtrees\I18N;
 use Aura\Router\Route;
@@ -77,6 +79,7 @@ use Fisharebest\Webtrees\Individual;
 use Fisharebest\Webtrees\Family;
 use Fisharebest\Webtrees\Media;
 use Fisharebest\Webtrees\Location;
+use Fisharebest\Webtrees\Module\ModuleMenuTrait;
 use Fisharebest\Webtrees\Note;
 use Fisharebest\Webtrees\Repository;
 use Fisharebest\Webtrees\Source;
@@ -85,10 +88,10 @@ use Fisharebest\Webtrees\Menu;
 use Fisharebest\Webtrees\Module\ClippingsCartModule;
 use Fisharebest\Webtrees\Module\ModuleCustomInterface;
 use Fisharebest\Webtrees\Module\ModuleCustomTrait;
+use Fisharebest\Webtrees\Module\ModuleTabTrait;
 use Fisharebest\Webtrees\Module\ModuleMenuInterface;
 use Fisharebest\Webtrees\Registry;
 use Fisharebest\Webtrees\Services\GedcomExportService;
-use Fisharebest\Webtrees\Services\UserService;
 use Fisharebest\Webtrees\Session;
 use Fisharebest\Webtrees\Tree;
 use Fisharebest\Webtrees\View;
@@ -102,15 +105,23 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use RuntimeException;
+//use Hartenthaler\Webtrees\Module\ClippingsCartEnhanced\PartnerChainsGlobal;
+//use Hartenthaler\Webtrees\Module\ClippingsCartEnhanced\PartnerChains;
+//use Hartenthaler\Webtrees\Module\ClippingsCartEnhanced\AncestorCircles;
 
-// information functions
+// control functions
 use function assert;
+use function app;
+use function redirect;
+use function route;
+use function view;
 
 // string functions
 use function is_string;
 use function strtolower;
 use function addcslashes;
 use function preg_match_all;
+use function str_replace;
 
 // array functions
 use function in_array;
@@ -119,14 +130,23 @@ use function array_keys;
 use function array_key_exists;
 use function array_filter;
 use function array_map;
+use function uasort;
+use function array_search;
 
 // file functions
 use function fopen;
 use function rewind;
 
+/*
+require_once(__DIR__ . '/src/AncestorCircles.php');
+require_once(__DIR__ . '/src/PartnerChains.php');
+require_once(__DIR__ . '/src/PartnerChainsGlobal.php');
+*/
+
 class ClippingsCartModuleEnhanced extends ClippingsCartModule
                                   implements ModuleCustomInterface, ModuleMenuInterface
 {
+    use ModuleMenuTrait;
     use ModuleCustomTrait;
 
     // List of const for module administration
@@ -153,15 +173,15 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
     private const ADD_ALL_CIRCLES        = 'add all circles in this tree';
 
     // What to execute on records in the clippings cart?
-    private const EXECUTE_DOWNLOAD          = 'download records as GEDCOM zip-file';
+    private const EXECUTE_DOWNLOAD          = 'download records as GEDCOM zip-file (including media files)';
     private const EXECUTE_VISUALIZE         = 'visualize records in a diagram';
     private const EXECUTE_VISUALIZE_TAM     = 'visualize records in a diagram using TAM';
     private const EXECUTE_VISUALIZE_LINEAGE = 'visualize records in a diagram using Lineage';
 
     // What are the options to delete records in the clippings cart?
-    private const EMPTY_ALL = 'all records';
-    private const EMPTY_SET = 'set of records by type';
-    private const EMPTY_SELECTED = 'selected records';
+    private const EMPTY_ALL      = 'all records';
+    private const EMPTY_SET      = 'set of records by type';
+    private const EMPTY_SELECTED = 'select records to be deleted';
 
     // Routes that have a record which can be added to the clipboard
     private const ROUTES_WITH_RECORDS = [
@@ -190,42 +210,42 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
     private const FILENAME_TAM = 'wt2TAM.ged';
 
     /** @var string */
-    private $exportFilenameTAM;
+    private string $exportFilenameTAM;
 
     /** @var GedcomExportService */
     private $gedcomExportService;
 
-    /** @var int The number of ancestor generations (individuals) to add (0 = proband) */
-    private $levelAncestorIndividual;
+    /** @var int The number of ancestor generations to be added (0 = proband) */
+    private int $levelAncestor;
 
-    /** @var int The number of ancestor generations (families) to add (0 = proband) */
-    private $levelAncestorFamily;
+    /** @var int The number of descendant generations to add (0 = proband) */
+    private int $levelDescendant;
 
-    /** @var int The number of descendent generations to add (0 = proband) */
-    private $levelDescendent;
-
-    public function __construct(GedcomExportService $gedcomExportService, UserService $userService)
+    public function __construct(
+        GedcomExportService $gedcomExportService,
+        ResponseFactoryInterface $responseFactory,
+        StreamFactoryInterface $streamFactory)
     {
-        $this->gedcomExportService      = $gedcomExportService;
-        $this->levelAncestorIndividual  = PHP_INT_MAX;
-        $this->levelAncestorFamily      = PHP_INT_MAX;
-        $this->evelDescendent           = PHP_INT_MAX;
-        $this->exportFilenameTAM        = self::FILENAME_TAM;
-        parent::__construct($gedcomExportService, $userService);
+        $this->gedcomExportService = $gedcomExportService;
+        $this->levelAncestor       = PHP_INT_MAX;
+        $this->levelDescendant     = PHP_INT_MAX;
+        $this->exportFilenameTAM   = self::FILENAME_TAM;
+        parent::__construct($gedcomExportService, $responseFactory, $streamFactory);
     }
 
     /**
      * A menu, to be added to the main application menu.
      *
      * Show:            show records in clippings cart and allow deleting some of them
-     * AddIndividual:   add individual (this record, parents, children, ancestors, descendants, ...)
-     * AddFamily:       add family record
-     * AddMedia:        add media record
-     * AddLocation:     add location record
-     * AddNote:         add shared note record
-     * AddRepository:   add repository record
-     * AddSource:       add source record
-     * AddSubmitter:    add submitter record
+     * AddRecord:
+     *      AddIndividual:   add individual (this record, parents, children, ancestors, descendants, ...)
+     *      AddFamily:       add family record
+     *      AddMedia:        add media record
+     *      AddLocation:     add location record
+     *      AddNote:         add shared note record
+     *      AddRepository:   add repository record
+     *      AddSource:       add source record
+     *      AddSubmitter:    add submitter record
      * Global:          add global sets of records (partner chains, circles)
      * Empty:           delete records in clippings cart
      * Execute:         execute an action on records in the clippings cart (export to GEDCOM file, visualize)
@@ -245,62 +265,131 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         // clippings cart is an array in the session specific for each tree
         $cart  = Session::get('cart', []);
 
-        $count = count($cart[$tree->name()] ?? []);
-        $badge = view('components/badge', ['count' => $count]);
-
-        $submenus = [
-            new Menu('Records in ' . $this->title() . ' ' . $badge, route('module', [
-                'module'      => $this->name(),
-                'action'      => 'Show',
-                'description' => $this->description(),
-                'tree'        => $tree->name(),
-            ]), 'menu-clippings-cart', ['rel' => 'nofollow']),
-        ];
+        $submenus = [$this->addMenuClippingsCart($tree, $cart)];
 
         $action = array_search($route->name, self::ROUTES_WITH_RECORDS, true);
         if ($action !== false) {
-            $xref = $route->attributes['xref'];
-            assert(is_string($xref));
-
-            $add_route = route('module', [
-                'module' => $this->name(),
-                'action' => 'Add' . $action,
-                'xref'   => $xref,
-                'tree'   => $tree->name(),
-            ]);
-
-            $submenus[] = new Menu(I18N::translate('Add this record to the clippings cart'),
-                                   $add_route,
-                                   'menu-clippings-add',
-                                   ['rel' => 'nofollow']);
+            $submenus[] = $this->addMenuAddThisRecord($tree, $route, $action);
         }
 
-        $submenus[] = new Menu(I18N::translate('Add global record sets to the clippings cart'), route('module', [
-            'module' => $this->name(),
-            'action' => 'Global',
-            'tree'   => $tree->name(),
-        ]), 'menu-clippings-global', ['rel' => 'nofollow']);
+        $submenus[] = $this->addMenuAddGlobalRecordSets($tree);
 
         if (!$this->isCartEmpty($tree)) {
-            $submenus[] = new Menu(I18N::translate('Delete records in the clippings cart'), route('module', [
-                'module' => $this->name(),
-                'action' => 'Empty',
-                'tree'   => $tree->name(),
-            ]), 'menu-clippings-empty', ['rel' => 'nofollow']);
-
-            $submenus[] = new Menu(I18N::translate(
-                'Execute an action on records in the clippings cart'), route('module', [
-                'module' => $this->name(),
-                'action' => 'Execute',
-                'tree'   => $tree->name(),
-            ]), 'menu-clippings-download', ['rel' => 'nofollow']);
+            $submenus[] = $this->addMenuDeleteRecords($tree);
+            $submenus[] = $this->addMenuExecuteAction($tree);
         }
 
         return new Menu($this->title(), '#', 'menu-clippings', ['rel' => 'nofollow'], $submenus);
     }
 
     /**
+     * @param Tree $tree
+     * @param array $cart
+     *
+     * @return Menu
+     */
+    private function addMenuClippingsCart (Tree $tree, array $cart): Menu
+    {
+        $count = count($cart[$tree->name()] ?? []);
+        $badge = view('components/badge', ['count' => $count]);
+
+        return new Menu(I18N::translate('Records in %s ', $this->title()) . $badge,
+            route('module', [
+                'module'      => $this->name(),
+                'action'      => 'Show',
+                'description' => $this->description(),
+                'tree'        => $tree->name(),
+            ]), 'menu-clippings-cart', ['rel' => 'nofollow']);
+    }
+
+    /**
+     * @param Tree $tree
+     * @param Route $route
+     * @param string $action
+     *
+     * @return Menu
+     */
+    private function addMenuAddThisRecord (Tree $tree, Route $route, string $action): Menu
+    {
+        $xref = $route->attributes['xref'];
+        assert(is_string($xref));
+
+        return new Menu(I18N::translate('Add this record to the clippings cart'),
+            route('module', [
+                'module' => $this->name(),
+                'action' => 'Add' . $action,
+                'xref'   => $xref,
+                'tree'   => $tree->name(),
+            ]), 'menu-clippings-add', ['rel' => 'nofollow']);
+    }
+
+    /**
+     * @param Tree $tree
+     *
+     * @return Menu
+     */
+    private function addMenuAddGlobalRecordSets (Tree $tree): Menu
+    {
+        return new Menu(I18N::translate('Add global record sets to the clippings cart'),
+            route('module', [
+                'module' => $this->name(),
+                'action' => 'Global',
+                'tree' => $tree->name(),
+            ]), 'menu-clippings-add', ['rel' => 'nofollow']);
+    }
+
+    /**
+     * @param Tree $tree
+     *
+     * @return Menu
+     */
+    private function addMenuDeleteRecords (Tree $tree): Menu
+    {
+        return new Menu(I18N::translate('Delete records in the clippings cart'),
+            route('module', [
+            'module' => $this->name(),
+            'action' => 'Empty',
+            'tree'   => $tree->name(),
+            ]), 'menu-clippings-empty', ['rel' => 'nofollow']);
+    }
+
+    /**
+     * @param Tree $tree
+     *
+     * @return Menu
+     */
+    private function addMenuExecuteAction (Tree $tree): Menu
+    {
+        return new Menu(I18N::translate('Execute an action on records in the clippings cart'),
+            route('module', [
+                'module' => $this->name(),
+                'action' => 'Execute',
+                'tree' => $tree->name(),
+            ]), 'menu-clippings-download', ['rel' => 'nofollow']);
+    }
+
+    /**
+     * @param ServerRequestInterface $request
+     *
+     * @return ResponseInterface
+     */
+    public function getShowAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $tree = $request->getAttribute('tree');
+        assert($tree instanceof Tree);
+
+        return $this->viewResponse($this->name() . '::' . 'show', [
+            'module'      => $this->name(),
+            'records'     => $this->getRecordsInCart($tree),
+            'title'       => I18N::translate('Family tree clippings cart'),
+            'description' => $this->description(),
+            'tree'        => $tree,
+        ]);
+    }
+
+    /**
      * tbd: show options only if they will add new elements to the clippings cart otherwise grey them out
+     * tbd: indicate the number of records which will be added by a button
      *
      * @param ServerRequestInterface $request
      *
@@ -317,34 +406,38 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         $individual = Auth::checkIndividualAccess($individual);
         $name       = $individual->fullName();
 
+        $generations['A'] = $this->countAncestorGenerations($individual);
+        $generations['D'] = $this->countDescendantGenerations($individual);
+
         if ($individual->sex() === 'F') {
             $options = [
                 self::ADD_RECORD_ONLY       => $name,
                 self::ADD_PARENT_FAMILIES   => I18N::translate('%s, her parents and siblings', $name),
                 self::ADD_SPOUSE_FAMILIES   => I18N::translate('%s, her spouses and children', $name),
-                self::ADD_ANCESTORS         => I18N::translate('%s and her ancestors', $name),
-                self::ADD_ANCESTOR_FAMILIES => I18N::translate('%s, her ancestors and their families', $name),
-                self::ADD_DESCENDANTS       => I18N::translate('%s, her spouses and descendants', $name),
+                self::ADD_ANCESTORS         => I18N::translate('%1$s and her ancestors (up to %2$s generations)', $name, $generations['A']),
+                self::ADD_ANCESTOR_FAMILIES => I18N::translate('%1$s, her ancestors and their families (up to %2$s generations)', $name, $generations['A']),
+                self::ADD_DESCENDANTS       => I18N::translate('%1$s, her spouses and descendants (up to %2$s generations)', $name, $generations['D']),
             ];
         } else {
             $options = [
                 self::ADD_RECORD_ONLY       => $name,
                 self::ADD_PARENT_FAMILIES   => I18N::translate('%s, his parents and siblings', $name),
                 self::ADD_SPOUSE_FAMILIES   => I18N::translate('%s, his spouses and children', $name),
-                self::ADD_ANCESTORS         => I18N::translate('%s and his ancestors', $name),
-                self::ADD_ANCESTOR_FAMILIES => I18N::translate('%s, his ancestors and their families', $name),
-                self::ADD_DESCENDANTS       => I18N::translate('%s, his spouses and descendants', $name),
+                self::ADD_ANCESTORS         => I18N::translate('%1$s and his ancestors (up to %2$s generations)', $name, $generations['A']),
+                self::ADD_ANCESTOR_FAMILIES => I18N::translate('%1$s, his ancestors and their families (up to %2$s generations)', $name, $generations['A']),
+                self::ADD_DESCENDANTS       => I18N::translate('%1$s, his spouses and descendants (up to %2$s generations)', $name, $generations['D']),
             ];
         }
-        $options[self::ADD_PARTNER_CHAINS]     = I18N::translate('the partner chains %s belongs to', $name);
+        $options[self::ADD_PARTNER_CHAINS] = I18N::translate('the partner chains %s belongs to', $name);
 
         $title = I18N::translate('Add %s to the clippings cart', $name);
 
-        return $this->viewResponse('modules/clippings/add-options', [
-            'options' => $options,
-            'record'  => $individual,
-            'title'   => $title,
-            'tree'    => $tree,
+        return $this->viewResponse($this->name() . '::' . 'add-options', [
+            'options'     => $options,
+            'record'      => $individual,
+            'generations' => $generations,
+            'title'       => $title,
+            'tree'        => $tree,
         ]);
     }
 
@@ -360,8 +453,12 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
 
         $params = (array) $request->getParsedBody();
 
-        $xref   = $params['xref'] ?? '';
-        $option = $params['option'] ?? '';
+        $xref        = $params['xref'] ?? '';
+        $option      = $params['option'] ?? '';
+        $generations = $params['generations'] ?? '';
+        if ($generations !== '') {
+            // tbd set $this->level...
+        }
 
         $individual = Registry::individualFactory()->make($xref, $tree);
         $individual = Auth::checkIndividualAccess($individual);
@@ -384,16 +481,16 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
                 break;
 
             case self::ADD_ANCESTORS:
-                $this->addAncestorsToCart($individual);
+                $this->addAncestorsToCart($individual, $this->levelAncestor);
                 break;
 
             case self::ADD_ANCESTOR_FAMILIES:
-                $this->addAncestorFamiliesToCart($individual);
+                $this->addAncestorFamiliesToCart($individual, $this->levelAncestor);
                 break;
 
             case self::ADD_DESCENDANTS:
                 foreach ($individual->spouseFamilies() as $family) {
-                    $this->addFamilyAndDescendantsToCart($family);
+                    $this->addFamilyAndDescendantsToCart($family, $this->levelDescendant);
                 }
                 break;
 
@@ -427,12 +524,14 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
             self::ADD_CHILDREN    => I18N::translate('%s and their children', $name),
             /* I18N: %s is a family (husband + wife) */
             self::ADD_DESCENDANTS => I18N::translate('%s and their descendants', $name),
+            /* I18N: %s is a family (husband + wife) */
             self::ADD_PARTNER_CHAINS => I18N::translate('%s and the partner chains they belong to', $name),
         ];
 
+        /* I18N: %s is a family (husband + wife) */
         $title = I18N::translate('Add %s to the clippings cart', $name);
 
-        return $this->viewResponse('modules/clippings/add-options', [
+        return $this->viewResponse($this->name() . '::' . 'add-options', [
             'options' => $options,
             'record'  => $family,
             'title'   => $title,
@@ -495,7 +594,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         $title = I18N::translate('Add global record sets to the clippings cart');
         $label = I18N::translate('Add to the clippings cart');
 
-        return $this->viewResponse('modules/clippings/global', [
+        return $this->viewResponse($this->name() . '::' . 'global', [
             'options' => $options,
             'title'   => $title,
             'label'   => $label,
@@ -528,10 +627,10 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         }
 
         $url = route('module', [
-            'module'     => $this->name(),
-            'action'     => 'Show',
-            'descrition' => $this->description(),
-            'tree'       => $tree->name(),
+            'module'      => $this->name(),
+            'action'      => 'Show',
+            'description' => $this->description(),
+            'tree'        => $tree->name(),
         ]);
 
         return redirect($url);
@@ -547,13 +646,13 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         $tree = $request->getAttribute('tree');
         assert($tree instanceof Tree);
 
-        $options[self::EXECUTE_DOWNLOAD]  = I18N::translate('download records as GEDCOM zip-file');
+        $options[self::EXECUTE_DOWNLOAD]  = I18N::translate('download records as GEDCOM zip-file (including media files)');
         $options[self::EXECUTE_VISUALIZE] = I18N::translate('visualize records in a diagram');
 
         $title = I18N::translate('Execute an action on records in the clippings cart');
         $label = I18N::translate('Select an action');
 
-        return $this->viewResponse('modules/clippings/execute', [
+        return $this->viewResponse($this->name() . '::' . 'execute', [
             'options' => $options,
             'title'   => $title,
             'label'   => $label,
@@ -611,7 +710,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
 
         $title = I18N::translate('Visualize records in the clippings cart');
 
-        return $this->viewResponse('modules/clippings/visualize', [
+        return $this->viewResponse($this->name() . '::' . 'visualize', [
             'options' => $options,
             'title'   => $title,
             'tree'    => $tree,
@@ -668,13 +767,13 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
 
         $title = I18N::translate('Delete all records, a set of records of the same type, or selected records');
         $label = I18N::translate('Delete');
+        $labelType = I18N::translate('Delete all records of a type');
         $recordTypes = $this->countRecordTypesInCart($tree, self::TYPES_OF_RECORDS);
         $plural = self::EMPTY_ALL . ' ' . $badge = view('components/badge', ['count' => $recordTypes['all']]);
         $options[self::EMPTY_ALL] = I18N::plural('this record', $plural, $recordTypes['all']);
         unset($recordTypes['all']);
 
         if (count($recordTypes) > 1) {
-            $headingTypes = I18N::translate('Delete all records of a type');
             $recordTypesList = implode(', ', array_keys($recordTypes));
             $options[self::EMPTY_SET] = I18N::translate(self::EMPTY_SET) . ': ' . $recordTypesList;
             $options[self::EMPTY_SELECTED] = I18N::translate(self::EMPTY_SELECTED);
@@ -683,11 +782,11 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         }
         $selectedTypes = [];
 
-        return $this->viewResponse('modules/clippings/empty', [
+        return $this->viewResponse($this->name() . '::' . 'empty', [
             'options'        => $options,
             'title'          => $title,
             'label'          => $label,
-            'headingTypes'   => $headingTypes,
+            'labelType'      => $labelType,
             'recordTypes'    => $recordTypes,
             'selectedTypes'  => $selectedTypes,
             'tree'           => $tree,
@@ -787,7 +886,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         $description = I18N::translate('Download %s and import it in TAM application', $this->exportFilenameTAM);
         $label = I18N::translate('Apply privacy settings');
 
-        return $this->viewResponse('modules/clippings/tam', [
+        return $this->viewResponse($this->name() . '::' . 'tam', [
             'is_manager'    => Auth::isManager($tree, $user),
             'is_member'     => Auth::isMember($tree, $user),
             'module'        => $this->name(),
@@ -836,9 +935,12 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
             throw new RuntimeException('Failed to create temporary stream');
         }
 
+        // Media file prefix
+        $path = $tree->getPreference('MEDIA_DIRECTORY');
+
         // We have already applied privacy filtering, so do not do it again.
         $encoding = 'UTF-8';
-        $this->gedcomExportService->export($tree, $stream, false, $encoding, Auth::PRIV_HIDE, '', $records);
+        $this->gedcomExportService->export($tree, true, $encoding, Auth::PRIV_HIDE, $path, $records);
         rewind($stream);
 
         // Use a stream, so that we do not have to load the entire file into memory.
@@ -1182,6 +1284,8 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
     }
 
     /**
+     * Recursive function to traverse the tree and add the ancestors
+     *
      * @param Individual $individual
      * @param int $level
      *
@@ -1199,6 +1303,104 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
                     $this->addAncestorsToCart($parent, $level - 1);
                 }
             }
+        }
+    }
+
+    /**
+     * Recursive function to traverse the tree and add the ancestors and their families
+     *
+     * @param Individual $individual
+     * @param int $level
+     *
+     * @return void
+     */
+    protected function addAncestorFamiliesToCart(Individual $individual, int $level = PHP_INT_MAX): void
+    {
+        foreach ($individual->childFamilies() as $family) {
+            $this->addFamilyAndChildrenToCart($family);
+
+            foreach ($family->spouses() as $parent) {
+                if ($level > 0) {
+                    $this->addAncestorFamiliesToCart($parent, $level - 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * Recursive function to traverse the tree and add the descendant families
+     *
+     * @param Family $family
+     * @param int $level
+     *
+     * @return void
+     */
+    protected function addFamilyAndDescendantsToCart(Family $family, int $level = PHP_INT_MAX): void
+    {
+        $this->addFamilyAndChildrenToCart($family);
+
+        foreach ($family->children() as $child) {
+            foreach ($child->spouseFamilies() as $child_family) {
+                if ($level > 0) {
+                    $this->addFamilyAndDescendantsToCart($child_family, $level - 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * Recursive function to traverse the tree and count the maximum ancestor generation
+     *
+     * @param Individual $individual
+     *
+     * @return int
+     */
+    protected function countAncestorGenerations(Individual $individual): int
+    {
+        $leave = true;
+        $countMax = -1;
+        foreach ($individual->childFamilies() as $family) {
+            foreach ($family->spouses() as $parent) {
+                // there are some parent nodes/trees; get the maximum height of parent trees
+                $leave = false;
+                $countSubtree = $this->countAncestorGenerations($parent);
+                if ($countSubtree > $countMax) {
+                    $countMax = $countSubtree;
+                }
+            }
+        }
+        If ($leave) {
+            return 1;               // leave is reached
+        } else {
+            return $countMax + 1;
+        }
+    }
+
+    /**
+     * Recursive function to traverse the tree and count the maximum descendant generation
+     *
+     * @param Individual $individual
+     *
+     * @return int
+     */
+    protected function countDescendantGenerations(Individual $individual): int
+    {
+        $leave = true;
+        $countMax = -1;
+        foreach ($individual->spouseFamilies() as $family) {
+            foreach ($family->children() as $child) {
+                // there are some child nodes/trees; get the maximum height of child trees
+                $leave = false;
+                $countSubtree = $this->countDescendantGenerations($child);
+                if ($countSubtree > $countMax) {
+                    $countMax = $countSubtree;
+                }
+            }
+        }
+        If ($leave) {
+            return 1;               // leave is reached
+        } else {
+            return $countMax + 1;
         }
     }
 
@@ -1283,12 +1485,12 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
     }
 
     /**
-     * Bootstrap the module
+     *  bootstrap
      */
-    public function onBoot(): void
+    public function boot(): void
     {
-        // Here is a good place to register any views (templates) used by the module.
-        // This command allows the module to use: view($this->name() . '::' . 'fish')
+        // Here is also a good place to register any views (templates) used by the module.
+        // This command allows the module to use: view($this->name() . '::', 'fish')
         // to access the file ./resources/views/fish.phtml
         View::registerNamespace($this->name(), $this->resourcesFolder() . 'views/');
     }

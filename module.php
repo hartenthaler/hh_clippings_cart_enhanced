@@ -1,8 +1,7 @@
 <?php
 
-namespace Hartenthaler\Webtrees\Module\ClippingsCart;
+namespace Hartenthaler\Webtrees\Module\ClippingsCartEnhanced;
 
-use Fisharebest\Webtrees\FlashMessages;
 use Fisharebest\Webtrees\Webtrees;
 
 use function app;
