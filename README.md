@@ -3,7 +3,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-![webtrees major version](https://img.shields.io/badge/webtrees-v2.0.x-green)
+![webtrees major version](https://img.shields.io/badge/webtrees-v2.1.x-green)
 ![Latest Release](https://img.shields.io/github/v/release/hartenthaler/hh_clippings_cart_emhanced)
 
 !!! This is an alpha version! Do not use it in a productive webtrees system! !!!
@@ -138,10 +138,10 @@ trees of partner chains.
 <a name="requirements"></a>
 ## Requirements
 
-This module requires **webtrees** version 2.0 or later.
+This module requires **webtrees** version 2.1 or later.
 This module has the same requirements as [webtrees#system-requirements](https://github.com/fisharebest/webtrees#system-requirements).
 
-This module was tested with **webtrees** 2.0.17 version and all available themes and all other custom modules.
+This module was tested with **webtrees** 2.1.0-alpha.1 version and all available themes and all other custom modules.
 If you are using the Vesta clippings cart module: the integration is an open issue.
 
 <a name="installation"></a>

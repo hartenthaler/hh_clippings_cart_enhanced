@@ -27,24 +27,25 @@
 /*
  * tbd
  * ---
+ * code: update GEDCOM export for TAM using webtrees 2.1 environment
  * code: implement deleting of records in cart by type
- * code: when adding descendents or ancestors then allow the specification of the number of generations (like in webtrees 1): 1..max_exist_gen
- * code: check maximum generation level in the tree for a proband and use this in the add menus
+ * code: when adding descendents or ancestors then allow the specification of the number of generations
  * code: empty cart: show block with "type delete" only if second option is selected
  * code: empty cart: button should be labeled "continue" and not "delete" if third option is selected
- * code: add TRAIT module (?)
+ * code: add specific TRAIT module (?)
  * code: show add options only if they will add new elements to the clippings cart otherwise grey them out
  * code: when adding global sets: instead of using radio buttons use select buttons?
  * translation: translate all new strings to German using po/mo
- * issue: new global add function to add longest descendant-ancestor connection in a tree
- *          (calculate for all individuals in the tree the most distant ancestor,
- *           select the two individuals with the greatest distance,
- *           add all their ancestors and descendants, remove all the leaves)
+ * issue: new global add function to add longest descendant-ancestor connection in a tree:
+ *           calculate for all individuals in the tree the most distant ancestor (this is maybe a list of individuals),
+ *           select a pair of two individuals with the greatest distance,
+ *           add all their ancestors and descendants (???), remove all the leaves(???)
+ * issue: new add function for an individual: add chain to most distant ancestor
  * issue: new global add function to add all records of a tree
  * issue: integrate TAM instead of exporting GEDCOM file for external TAM application
  * issue: integrate Lineage
  * issue: use GVExport (GraphViz) code for visualization (?)
- * issue: implement webtrees 1 module "branch export" (starting person and several stop persons/families (stored as profile)
+ * issue: implement webtrees 1 module "branch export" with a starting person and several stop persons/families (stored as profile)
  * issue: new function to add all circles for an individual or a family
  * issue: new action: enhanced list using webtrees standard lists for each type of records
  * idea: use TAM to visualize the hierarchy of location records
@@ -88,7 +89,6 @@ use Fisharebest\Webtrees\Menu;
 use Fisharebest\Webtrees\Module\ClippingsCartModule;
 use Fisharebest\Webtrees\Module\ModuleCustomInterface;
 use Fisharebest\Webtrees\Module\ModuleCustomTrait;
-use Fisharebest\Webtrees\Module\ModuleTabTrait;
 use Fisharebest\Webtrees\Module\ModuleMenuInterface;
 use Fisharebest\Webtrees\Registry;
 use Fisharebest\Webtrees\Services\GedcomExportService;
@@ -105,9 +105,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use RuntimeException;
-//use Hartenthaler\Webtrees\Module\ClippingsCartEnhanced\PartnerChainsGlobal;
-//use Hartenthaler\Webtrees\Module\ClippingsCartEnhanced\PartnerChains;
-//use Hartenthaler\Webtrees\Module\ClippingsCartEnhanced\AncestorCircles;
 
 // control functions
 use function assert;
@@ -137,12 +134,6 @@ use function array_search;
 use function fopen;
 use function rewind;
 
-/*
-require_once(__DIR__ . '/src/AncestorCircles.php');
-require_once(__DIR__ . '/src/PartnerChains.php');
-require_once(__DIR__ . '/src/PartnerChainsGlobal.php');
-*/
-
 class ClippingsCartModuleEnhanced extends ClippingsCartModule
                                   implements ModuleCustomInterface, ModuleMenuInterface
 {
@@ -155,7 +146,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
     public const CUSTOM_MODULE      = 'hh_clippings_cart_enhanced';
     public const CUSTOM_AUTHOR      = 'Hermann Hartenthaler';
     public const CUSTOM_WEBSITE     = 'https://github.com/hartenthaler/' . self::CUSTOM_MODULE . '/';
-    public const CUSTOM_VERSION     = '2.0.17.1';
+    public const CUSTOM_VERSION     = '2.1.0.1';
     public const CUSTOM_LAST        = 'https://github.com/hartenthaler/' .
                                       self::CUSTOM_MODULE. '/raw/main/latest-version.txt';
 
@@ -1277,6 +1268,7 @@ class ClippingsCartModuleEnhanced extends ClippingsCartModule
         foreach ($object->mediaFiles() as $media_file) {
             $from = $media_file->filename();
             $to = $path . $media_file->filename();
+            // tbd check replacement for funtion "has"
             if (!$media_file->isExternal() && $media_filesystem->has($from) && !$zip_filesystem->has($to)) {
                 $zip_filesystem->writeStream($to, $media_filesystem->readStream($from));
             }
