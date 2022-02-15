@@ -6,7 +6,9 @@
 ![webtrees major version](https://img.shields.io/badge/webtrees-v2.1.x-green)
 ![Latest Release](https://img.shields.io/github/v/release/hartenthaler/hh_clippings_cart_emhanced)
 
-!!! This is an alpha version! Do not use it in a productive webtrees system! !!!
+!!! This is an early beta version for webtrees 2.1! Do not use it in a productive webtrees system! !!!
+
+!!! There is a stable version available for webtrees 2.0: https://github.com/huhwt/huhwt-cce20 !!!
 
 This [webtrees](https://www.webtrees.net/) custom module replaces the original 'Clippings Cart' module.
 It offers additional possibilities to add records to the clippings cart
