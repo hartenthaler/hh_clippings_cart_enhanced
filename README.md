@@ -8,7 +8,7 @@
 
 !!! This is an early beta version for webtrees 2.1! Do not use it in a productive webtrees system! !!!
 
-!!! There is a stable version available for webtrees 2.0: https://github.com/huhwt/huhwt-cce20 !!!
+!!! There is a stable version available for webtrees 2.1: https://github.com/huhwt/huhwt-cce !!!
 
 This [webtrees](https://www.webtrees.net/) custom module replaces the original 'Clippings Cart' module.
 It offers additional possibilities to add records to the clippings cart
@@ -146,43 +146,6 @@ This module has the same requirements as [webtrees#system-requirements](https://
 This module was tested with **webtrees** 2.1.0-alpha.1 version and all available themes and all other custom modules.
 If you are using the Vesta clippings cart module: the integration is an open issue.
 
-<a name="installation"></a>
-## Installation
-
-This section documents installation instructions for this module.
-
-1. Download the [latest release](https://github.com/hartenthaler/hh_clippings_cart_enhanced/releases/latest).
-3. Unzip the package into your `webtrees/modules_v4` directory of your web server.
-4. Rename the folder to `hh_clippings_cart_enhanced`. It's safe to overwrite the respective directory if it already exists.
-5. Login to **webtrees** as administrator, go to <span class="pointer">Control Panel/Modules/Genealogy/Menus</span>,
-   and find the module. It will be called "Clippings cart enhanced". Check if it has a tick for "Enabled".
-6. Edit this entry to set the access level for each tree and to position the menu item to suit your preferences.
-7. You can deactivate the standard module "clippings cart".
-8. Finally, click SAVE, to complete the configuration.
-
-<a name="upgrade"></a>
-## Upgrade
-
-To update simply replace the hh_clippings_cart_enhanced files
-with the new ones from the latest release.
-
-<a name="translation"></a>
-## Translation
-
-You can help to translate this module.
-It uses the po/mo system.
-You can contribute via a pull request (if you know how) or by e-mail.
-Updated translations will be included in the next release of this module.
-
-There are now, beside English and German, no other translations available.
-
-<a name="support"></a>
-## Support
-
-<span style="font-weight: bold;">Issues: </span>you can report errors raising an issue in this GitHub repository.
-
-<span style="font-weight: bold;">Forum: </span>general webtrees support can be found at the [webtrees forum](http://www.webtrees.net/)
-
 <a name="thanks"></a>
 ## Thank you
 
@@ -193,7 +156,7 @@ Special thanks to [huhwt](https://github.com/huhwt/) for testing, suggestions, a
 
 This module is derived from the [Vesta clippings cart](https://github.com/vesta-webtrees-2-custom-modules/vesta_clippings_cart) module.
 
-* Copyright (C) 2021 Hermann Hartenthaler
+* Copyright (C) 2022 Hermann Hartenthaler
 * Copyright (C) 2021 Richard Cissée. All rights reserved.
 * Derived from **webtrees** - Copyright 2021 webtrees development team.
 
